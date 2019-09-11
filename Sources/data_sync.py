@@ -26,10 +26,10 @@ import json
 import os
 import re
 
-baseLanguage = "en"
-projectFolder = "Output"
 placeholderPattern = re.compile(r'{String([0-9]*)}|{Number([0-9]*)}')
-
+scriptRunPath = os.getcwd()
+scriptFileName = os.path.basename(__file__)
+configFileName = os.path.splitext(scriptFileName)[0] + ".config.json"
 
 def parseDocument(spreadsheedId, sheetIndex):
     sheetUrl = "https://spreadsheets.google.com/feeds/cells/"+ spreadsheedId +"/"+ str(sheetIndex) +"/public/full?alt=json"
@@ -71,6 +71,7 @@ def writeLocalizations(rows, configuration):
 def buildLocalizationIOS(rows, column, languageKey, configuration):
 
     # Prepare paths.
+    baseLanguage = "en" if (configuration["baseLanguage"] is None) else configuration["baseLanguage"]
     languageFolderName = "Base" if (languageKey == baseLanguage) else languageKey
     folderPath = configuration["projectFolder"] + "/" + languageFolderName + ".lproj"
     fileName = configuration["stringsFileName"] + ".strings"
@@ -118,26 +119,33 @@ def startFile(folderPath, filePath, fileName):
 
 def writeHeaderComment(fileName, fileHandler):
 
-    fileHandler.write("/*\n  " + fileName + "\n  Generated with " + os.path.basename(__file__) + ".\n*/\n\n")
+    fileHandler.write("/*\n  " + fileName + "\n  Generated with " + scriptFileName + ".\n*/\n\n")
 
 def writeSectionComment(sectionTitle, fileHandler):
 
     fileHandler.write("\n/*\n Section: %s\n*/\n" % sectionTitle.replace("/", "").replace(" ", ""))
-        
 
+def run(config):
 
-# Write Localizable.strings.
-stringsTable = parseDocument("1672QPWDsxBtaX5hc5QgZhqBwLADMnPVEv7-wLB3g-ug", 1)
-writeLocalizations(stringsTable, {
-    "os": "iOS",
-    "projectFolder": projectFolder,
-    "stringsFileName": "Localizable"    
-})
+    sheetId = config["sheetId"]
 
-# Write colors.xml.
-colorsTable = parseDocument("1672QPWDsxBtaX5hc5QgZhqBwLADMnPVEv7-wLB3g-ug", 2)
-writeColors(colorsTable, {
-    "os": "iOS",
-    "outputFolder": projectFolder + "/Generated",
-    "fileName": "colors"    
-})
+    for l10nConfig in config["l10n"]:
+        tableData = parseDocument(sheetId, l10nConfig["sheetNumber"])
+        writeLocalizations(tableData, l10nConfig)
+
+    for colorConfig in config["colors"]:
+        tableData = parseDocument(sheetId, colorConfig["sheetNumber"])
+        writeColors(tableData, colorConfig)
+
+# Parse config file and run tasks.
+try:
+    with open(configFileName, 'r') as stream:
+        config = json.load(stream)
+        run(config)
+
+except json.JSONDecodeError as exc:
+    print("Error parsing config file: ")
+    print(exc)
+
+except FileNotFoundError:
+    print("Error: Could not find \"" + configFileName + "\". This should be placed at the run directory of this script. Current run directory is \"" + scriptRunPath +"\".")

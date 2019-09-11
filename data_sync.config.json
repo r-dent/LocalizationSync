@@ -1,0 +1,20 @@
+{
+  "sheetId": "1672QPWDsxBtaX5hc5QgZhqBwLADMnPVEv7-wLB3g-ug",
+  "l10n": [
+    {
+      "os": "iOS",
+      "sheetNumber": 1,
+      "baseLanguage": "en",
+      "projectFolder": "Output",
+      "stringsFileName": "Localizable"
+    }
+  ],
+  "colors": [
+    {
+      "os": "iOS",
+      "sheetNumber": 2,
+      "outputFolder": "Output/Generated",
+      "fileName": "colors"
+    }
+  ]
+}

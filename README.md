@@ -5,7 +5,7 @@ This is a python script that downloads localization strings and CI color informa
 
 ![Vizualization of the workflow](Resources/workflow.jpg)
 
-## Usage
+## Prerequisites
 
 Create a Google Sheet document with sheets like these:
 
@@ -18,12 +18,8 @@ Find the ID of your document by copying it from your browsers address bar.
 
 ![sheet_url.png](Resources/sheet_url.png)
 
-__--> TODO: Setting up the script Section__
+## Usage
 
-## Example
+Create a `data_sync.config.json` in your project and populate it with the contents of the [example config](data_sync.config.json). Replace the `sheetId` with your own. You can modify the other settings to fit the needs of your project.
 
-Go to your terminal of choice and run
-
-```bash
-python3 Sources/data_sync.py
-```
+Then open a terminal at your project path and run `python3 Sources/data_sync.py`. Look for your newly created resource files.
