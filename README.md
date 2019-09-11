@@ -7,7 +7,7 @@ This is a python script that downloads localization strings and CI color informa
 
 ## Prerequisites
 
-Create a Google Sheet document with sheets like these:
+Create a Google Sheet document with sheets like [these](https://docs.google.com/spreadsheets/d/1672QPWDsxBtaX5hc5QgZhqBwLADMnPVEv7-wLB3g-ug):
 
 ![Example of a L10n table](Resources/sheet_l10n.png)
 ![Example of a colors table](Resources/sheet_colors.png)
