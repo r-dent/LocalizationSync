@@ -1,12 +1,33 @@
 #!/usr/bin/python
 
+# Copyright (c) 2019 Roman Gille, http://romangille.com
+
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import urllib.request
 import json
 import os
 import re
 
 baseLanguage = "en"
-projectFolder = "RapScript"
+projectFolder = "Output"
 placeholderPattern = re.compile(r'{String([0-9]*)}|{Number([0-9]*)}')
 
 
@@ -106,23 +127,15 @@ def writeSectionComment(sectionTitle, fileHandler):
 
 
 # Write Localizable.strings.
-stringsTable = parseDocument("1mgbrulyTgQfSQPBLESCbPDsGBPvnX-vf_g14NbP102o", 1)
+stringsTable = parseDocument("1672QPWDsxBtaX5hc5QgZhqBwLADMnPVEv7-wLB3g-ug", 1)
 writeLocalizations(stringsTable, {
     "os": "iOS",
     "projectFolder": projectFolder,
     "stringsFileName": "Localizable"    
 })
 
-# Write InfoPlist.strings.
-permissionsTable = parseDocument("1mgbrulyTgQfSQPBLESCbPDsGBPvnX-vf_g14NbP102o", 3)
-writeLocalizations(permissionsTable, {
-    "os": "iOS",
-    "projectFolder": projectFolder,
-    "stringsFileName": "InfoPlist"    
-})
-
 # Write colors.xml.
-colorsTable = parseDocument("1mgbrulyTgQfSQPBLESCbPDsGBPvnX-vf_g14NbP102o", 2)
+colorsTable = parseDocument("1672QPWDsxBtaX5hc5QgZhqBwLADMnPVEv7-wLB3g-ug", 2)
 writeColors(colorsTable, {
     "os": "iOS",
     "outputFolder": projectFolder + "/Generated",

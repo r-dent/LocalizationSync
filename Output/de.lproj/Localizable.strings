@@ -1,0 +1,8 @@
+/*
+  Localizable.strings
+  Generated with data_sync.py.
+*/
+
+"hello_world" = "Hallo Welt!";
+"how_many_lights" = "Wie viele Lichter?";
+"light_count" = "Da sind %@ Lichter!";
