@@ -5,15 +5,21 @@
       "os": "iOS",
       "sheetNumber": 1,
       "baseLanguage": "en",
-      "projectFolder": "Output",
+      "projectFolder": "Output/iOS",
       "stringsFileName": "Localizable"
+    },
+    {
+      "os": "Android",
+      "sheetNumber": 1,
+      "baseLanguage": "en",
+      "projectFolder": "Output/Android/app/src/main/res"
     }
   ],
   "colors": [
     {
       "os": "iOS",
       "sheetNumber": 2,
-      "outputFolder": "Output/Generated",
+      "outputFolder": "Output/iOS/Generated",
       "fileName": "colors"
     }
   ]

@@ -6,3 +6,9 @@
 "hello_world" = "Hallo Welt!";
 "how_many_lights" = "Wie viele Lichter?";
 "light_count" = "Da sind %@ Lichter!";
+
+/*
+ Section: More
+*/
+"another_one" = "Noch einer.";
+"and_again" = "Und schonwieder!";

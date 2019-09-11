@@ -25,6 +25,8 @@ import urllib.request
 import json
 import os
 import re
+import xml.etree.ElementTree as xml
+from xml.dom import minidom
 
 placeholderPattern = re.compile(r'{String([0-9]*)}|{Number([0-9]*)}')
 scriptRunPath = os.getcwd()
@@ -65,8 +67,12 @@ def writeLocalizations(rows, configuration):
 
     for languageColumn in range(2, 2 + languageCount):
         languageKey = rows[1][languageColumn].replace(" ", "")
+        
         if configuration["os"] == "iOS":
             buildLocalizationIOS(rows, languageColumn, languageKey, configuration)
+    
+        if configuration["os"] == "Android":
+            buildLocalizationAndroid(rows, languageColumn, languageKey, configuration)
 
 def buildLocalizationIOS(rows, column, languageKey, configuration):
 
@@ -79,17 +85,49 @@ def buildLocalizationIOS(rows, column, languageKey, configuration):
 
     # Prepare file.
     outputFile = startFile(folderPath, filePath, fileName)
-    writeHeaderComment(fileName, outputFile)
+    outputFile.write("/*\n  " + fileName + "\n  Generated with " + scriptFileName + ".\n*/\n\n")
 
     for row in range(2, 1 + len(rows)):
         key = rows[row][1]
         if key.startswith("/"):
-            writeSectionComment(key, outputFile)
+            outputFile.write("\n/*\n %s\n*/\n" % sectionComment(key))
             continue
         translation = placeholderPattern.sub("%@", rows[row][column])
         # Write line.
         outputFile.write("\"%s\" = \"%s\";\n" % (key, translation))
 
+    outputFile.close()
+    print("Generated " + filePath + ".")
+
+def buildLocalizationAndroid(rows, column, languageKey, configuration):
+
+    # Prepare paths.
+    isBaseLanguage = (configuration["baseLanguage"] == languageKey)
+    languageFolderName = "values" if isBaseLanguage else "values-" + languageKey
+    folderPath = configuration["projectFolder"] + "/" + languageFolderName
+    fileName = "strings.xml"
+    filePath = folderPath + "/" + fileName
+
+    # Start XML tree.
+    root = xml.Element("resources")
+    root.insert(0, xml.Comment("Generated with " + scriptFileName))
+    stringsCount = 0
+
+    for row in range(2, 1 + len(rows)):
+        key = rows[row][1]
+        if key.startswith("/"):
+            root.insert(stringsCount, xml.Comment(sectionComment(key)))
+            continue
+        translation = placeholderPattern.sub("%s", rows[row][column])
+        # Add line.
+        xml.SubElement(root, "string", name=key).text = translation
+        stringsCount += 1
+
+    xmlString = xml.tostring(root)
+    prettyXMLString = minidom.parseString(xmlString).toprettyxml()
+
+    outputFile = startFile(folderPath, filePath, fileName)
+    outputFile.write(prettyXMLString)
     outputFile.close()
     print("Generated " + filePath + ".")
 
@@ -111,19 +149,15 @@ def writeColors(rows, configuration):
     outputFile.close()
     print("Generated " + filePath + ".")
 
-def startFile(folderPath, filePath, fileName):
+def startFile(folderPath, filePath, fileName, binary=False):
 
     os.makedirs(folderPath, exist_ok=True)
-    fileHandler = open(filePath, "w")
+    fileHandler = open(filePath, "wb" if (binary) else "w")
     return fileHandler
 
-def writeHeaderComment(fileName, fileHandler):
+def sectionComment(sectionTitle):
 
-    fileHandler.write("/*\n  " + fileName + "\n  Generated with " + scriptFileName + ".\n*/\n\n")
-
-def writeSectionComment(sectionTitle, fileHandler):
-
-    fileHandler.write("\n/*\n Section: %s\n*/\n" % sectionTitle.replace("/", "").replace(" ", ""))
+    return "Section: %s" % sectionTitle.replace("/", "").replace(" ", "")
 
 def run(config):
 

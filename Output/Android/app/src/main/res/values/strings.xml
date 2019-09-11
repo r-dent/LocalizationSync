@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<resources>
+	<!--Generated with data_sync.py-->
+	<string name="hello_world">Hello World</string>
+	<string name="how_many_lights">How many Lights?</string>
+	<!--Section: More-->
+	<string name="light_count">There are %s lights!</string>
+	<string name="another_one">Another one.</string>
+	<string name="and_again">And again!</string>
+</resources>
