@@ -108,26 +108,17 @@ def buildLocalizationAndroid(rows, column, languageKey, configuration):
     fileName = configuration["fileName"] + ".xml"
     filePath = folderPath + "/" + fileName
 
-    # Start XML tree.
-    root = xml.Element("resources")
-    root.insert(0, xml.Comment("Generated with " + scriptFileName))
-    stringsCount = 0
+    strings = []
 
     for row in range(2, 1 + len(rows)):
         key = rows[row][1]
         if key.startswith("/"):
-            root.insert(stringsCount, xml.Comment(sectionComment(key)))
+            strings.append({key: ""})
             continue
-        translation = placeholderPattern.sub("%s", rows[row][column])
-        # Add line.
-        xml.SubElement(root, "string", name=key).text = translation
-        stringsCount += 1
-
-    xmlString = xml.tostring(root)
-    prettyXMLString = minidom.parseString(xmlString).toprettyxml()
+        strings.append({key: placeholderPattern.sub("%s", rows[row][column])})
 
     outputFile = startFile(folderPath, filePath, fileName)
-    outputFile.write(prettyXMLString)
+    outputFile.write(buildResourceXML(strings, "string"))
     outputFile.close()
     print("Generated " + filePath + ".")
 
