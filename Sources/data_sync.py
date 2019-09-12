@@ -79,8 +79,8 @@ def buildLocalizationIOS(rows, column, languageKey, configuration):
     # Prepare paths.
     baseLanguage = "en" if (configuration["baseLanguage"] is None) else configuration["baseLanguage"]
     languageFolderName = "Base" if (languageKey == baseLanguage) else languageKey
-    folderPath = configuration["projectFolder"] + "/" + languageFolderName + ".lproj"
-    fileName = configuration["stringsFileName"] + ".strings"
+    folderPath = configuration["outputFolder"] + "/" + languageFolderName + ".lproj"
+    fileName = configuration["fileName"] + ".strings"
     filePath = folderPath + "/" + fileName
 
     # Prepare file.
@@ -104,8 +104,8 @@ def buildLocalizationAndroid(rows, column, languageKey, configuration):
     # Prepare paths.
     isBaseLanguage = (configuration["baseLanguage"] == languageKey)
     languageFolderName = "values" if isBaseLanguage else "values-" + languageKey
-    folderPath = configuration["projectFolder"] + "/" + languageFolderName
-    fileName = "strings.xml"
+    folderPath = configuration["outputFolder"] + "/" + languageFolderName
+    fileName = configuration["fileName"] + ".xml"
     filePath = folderPath + "/" + fileName
 
     # Start XML tree.
@@ -133,21 +133,51 @@ def buildLocalizationAndroid(rows, column, languageKey, configuration):
 
 def writeColors(rows, configuration):
 
+    isAndroid = (configuration["os"] == "Android")
+    fileExtension = ".xml" if isAndroid else ".json"
     folderPath = configuration["outputFolder"]
-    fileName = configuration["fileName"] + ".json"
+    fileName = configuration["fileName"] + fileExtension
     filePath = folderPath + "/" + fileName
 
-    colors = {}
+    colors = []
 
     for row in range(2, 1 + len(rows)):
         key = rows[row][1]
         hexValue = rows[row][2]
-        colors[key] = hexValue
+        colors.append({key: hexValue})
 
     outputFile = startFile(folderPath, filePath, fileName)
-    json.dump(colors, outputFile)
+
+    if isAndroid:
+        outputFile.write(buildResourceXML(colors, "color"))
+    else:
+        jsonDict = {}
+        for item in colors:
+            key = next(iter(item))
+            jsonDict[key] = item[key]
+        json.dump(jsonDict, outputFile)
+    
+
     outputFile.close()
     print("Generated " + filePath + ".")
+
+def buildResourceXML(keyValueArray, elementName):
+    root = xml.Element("resources")
+    root.insert(0, xml.Comment("Generated with " + scriptFileName))
+    itemCount = 0
+
+    for item in keyValueArray:
+        key = next(iter(item))
+        if key.startswith("/"):
+            # Add comment.
+            root.insert(itemCount, xml.Comment(sectionComment(key)))
+            continue
+        # Add line.
+        xml.SubElement(root, elementName, name=key).text = item[key]
+        itemCount += 1
+
+    xmlString = xml.tostring(root)
+    return minidom.parseString(xmlString).toprettyxml()
 
 def startFile(folderPath, filePath, fileName, binary=False):
 

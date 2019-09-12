@@ -5,14 +5,15 @@
       "os": "iOS",
       "sheetNumber": 1,
       "baseLanguage": "en",
-      "projectFolder": "Output/iOS",
-      "stringsFileName": "Localizable"
+      "outputFolder": "Output/iOS",
+      "fileName": "Localizable"
     },
     {
       "os": "Android",
       "sheetNumber": 1,
       "baseLanguage": "en",
-      "projectFolder": "Output/Android/app/src/main/res"
+      "outputFolder": "Output/Android/app/src/main/res",
+      "fileName": "strings"
     }
   ],
   "colors": [
@@ -20,6 +21,12 @@
       "os": "iOS",
       "sheetNumber": 2,
       "outputFolder": "Output/iOS/Generated",
+      "fileName": "colors"
+    },
+    {
+      "os": "Android",
+      "sheetNumber": 2,
+      "outputFolder": "Output/Android/app/src/main/res",
       "fileName": "colors"
     }
   ]

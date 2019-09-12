@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<resources>
+	<!--Generated with data_sync.py-->
+	<color name="light">#ffffff</color>
+	<color name="dark">#000000</color>
+</resources>
