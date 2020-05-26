@@ -33,6 +33,10 @@ scriptRunPath = os.getcwd()
 scriptFileName = os.path.basename(__file__)
 configFileName = os.path.splitext(scriptFileName)[0] + ".config.json"
 
+l10nCommentIdentifier = "//"
+l10nSectionTitleIdentifier = "// -"
+l10nLineFormat = "\"%s\" = \"%s\";\n"
+
 def parseDocument(spreadsheedId, sheetIndex):
     sheetUrl = "https://spreadsheets.google.com/feeds/cells/"+ spreadsheedId +"/"+ str(sheetIndex) +"/public/full?alt=json"
     
@@ -51,6 +55,7 @@ def parseDocument(spreadsheedId, sheetIndex):
             rows[row] = {}
 
         print("Found %i rows." % (len(rows) - 1))
+        # print(json.dumps(rows, indent=4, sort_keys=True))
 
         for entry in entries:
             cellInfo = entry['gs$cell']
@@ -85,16 +90,35 @@ def buildLocalizationIOS(rows, column, languageKey, configuration):
 
     # Prepare file.
     outputFile = startFile(folderPath, filePath, fileName)
-    outputFile.write("/*\n  " + fileName + "\n  Generated with " + scriptFileName + ".\n*/\n\n")
+    l10nWriteHeaderComment(fileName, outputFile)
 
-    for row in range(2, 1 + len(rows)):
-        key = rows[row][1]
-        if key.startswith("/"):
-            outputFile.write("\n/*\n %s\n*/\n" % sectionComment(key))
+    for row in rows:
+        # Skip first row and rows without first column.
+        if row == 1 or 1 not in rows[row]:
             continue
+
+        key = rows[row][1]
+        # Add section comment.
+        if key.startswith(l10nSectionTitleIdentifier):
+            l10nWriteSectionComment(key, outputFile)
+            continue
+
+        # Skip empty translations...
+        if column not in rows[row]:
+            # ...but check if the key is a commetn first.
+            if key.startswith(l10nCommentIdentifier):
+                l10nWriteComment(key, outputFile)
+            continue
+
         translation = placeholderPattern.sub("%@", rows[row][column])
+        line = "\"%s\" = \"%s\";" % (key, translation)
+        # Check if the line is commented.
+        if key.startswith(l10nCommentIdentifier):
+            l10nWriteComment(line, outputFile)
+            continue
+
         # Write line.
-        outputFile.write("\"%s\" = \"%s\";\n" % (key, translation))
+        outputFile.write("%s\n" % line)
 
     outputFile.close()
     print("Generated " + filePath + ".")
@@ -110,10 +134,17 @@ def buildLocalizationAndroid(rows, column, languageKey, configuration):
 
     strings = []
 
-    for row in range(2, 1 + len(rows)):
+    for row in rows:
+        # Skip first row and rows without first column.
+        if row == 1 or 1 not in rows[row]:
+            continue
+
         key = rows[row][1]
-        if key.startswith("/"):
+        if key.startswith(l10nSectionTitleIdentifier):
             strings.append({key: ""})
+            continue
+        # Skip comments.
+        if key.startswith(l10nCommentIdentifier):
             continue
         strings.append({key: placeholderPattern.sub("%s", rows[row][column])})
 
@@ -132,7 +163,11 @@ def writeColors(rows, configuration):
 
     colors = []
 
-    for row in range(2, 1 + len(rows)):
+    for row in rows:
+        # Skip first row and rows without first column.
+        if row == 1 or 1 not in rows[row]:
+            continue
+
         key = rows[row][1]
         hexValue = rows[row][2]
         colors.append({key: hexValue})
@@ -159,9 +194,9 @@ def buildResourceXML(keyValueArray, elementName):
 
     for item in keyValueArray:
         key = next(iter(item))
-        if key.startswith("/"):
+        if key.startswith(l10nSectionTitleIdentifier):
             # Add comment.
-            root.insert(itemCount, xml.Comment(sectionComment(key)))
+            root.insert(itemCount, xml.Comment(xmlWriteSectionComment(key)))
             continue
         # Add line.
         xml.SubElement(root, elementName, name=key).text = item[key]
@@ -176,9 +211,25 @@ def startFile(folderPath, filePath, fileName, binary=False):
     fileHandler = open(filePath, "wb" if (binary) else "w")
     return fileHandler
 
-def sectionComment(sectionTitle):
+# Comment helper.
 
-    return "Section: %s" % sectionTitle.replace("/", "").replace(" ", "")
+def l10nWriteComment(comment, fileHandler):
+
+    fileHandler.write("/* %s */\n" % comment.replace(l10nCommentIdentifier, ""))
+
+def l10nWriteHeaderComment(fileName, fileHandler):
+
+    fileHandler.write("/*\n  " + fileName + "\n  Generated with " + scriptFileName + ".\n*/\n\n")
+
+def l10nWriteSectionComment(sectionTitle, fileHandler):
+
+    fileHandler.write("\n/*\n Section: %s\n*/\n" % sectionTitle.replace(l10nSectionTitleIdentifier, "").replace(" ", ""))
+
+def xmlWriteSectionComment(sectionTitle):
+
+    return "Section: %s" % sectionTitle.replace(l10nSectionTitleIdentifier, "").replace(" ", "")
+
+# Run.
 
 def run(config):
 

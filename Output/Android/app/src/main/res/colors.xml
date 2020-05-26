@@ -3,4 +3,5 @@
 	<!--Generated with data_sync.py-->
 	<color name="light">#ffffff</color>
 	<color name="dark">#000000</color>
+	<color name="green">#00ff00</color>
 </resources>

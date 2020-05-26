@@ -6,6 +6,7 @@
 "hello_world" = "Hallo Welt!";
 "how_many_lights" = "Wie viele Lichter?";
 "light_count" = "Da sind %@ Lichter!";
+/* "commented_key" = "Das soll ein Kommentar sein"; */
 
 /*
  Section: More
