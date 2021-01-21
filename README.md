@@ -3,6 +3,10 @@ This is a python script that downloads localization strings and CI color informa
 
 ![Vizualization of the workflow](Resources/workflow.jpg)
 
+## Installation
+
+    pip install localization-sync
+
 ## Prerequisites
 
 Create a Google Sheet document with sheets like [these](https://docs.google.com/spreadsheets/d/1672QPWDsxBtaX5hc5QgZhqBwLADMnPVEv7-wLB3g-ug):
@@ -20,7 +24,9 @@ Find the ID of your document by copying it from your browsers address bar.
 
 Create a `data_sync.config.json` in your project and populate it with the contents of the [example config](data_sync.config.json). Replace the `sheetId` with your own. You can modify the other settings to fit the needs of your project.
 
-Then open a terminal at your project path and run `python3 Sources/data_sync.py`. Look for your newly created resource files.
+Then open a terminal at your project path and run `l10n_sync`. Look for your newly created resource files.
+
+You can also copy [data_sync.py](Sources/data_sync.py) to your project and then run `python3 data_sync.py` when your config file is ready.
 
 ## Example
 

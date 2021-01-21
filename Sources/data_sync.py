@@ -243,15 +243,20 @@ def run(config):
         tableData = parseDocument(sheetId, colorConfig["sheetNumber"])
         writeColors(tableData, colorConfig)
 
-# Parse config file and run tasks.
-try:
-    with open(configFileName, 'r') as stream:
-        config = json.load(stream)
-        run(config)
+def main():
+    # Parse config file and run tasks.
+    try:
+        with open(configFileName, 'r') as stream:
+            config = json.load(stream)
+            run(config)
 
-except json.JSONDecodeError as exc:
-    print("Error parsing config file: ")
-    print(exc)
+    except json.JSONDecodeError as exc:
+        print("Error parsing config file: ")
+        print(exc)
 
-except FileNotFoundError:
-    print("Error: Could not find \"" + configFileName + "\". This should be placed at the run directory of this script. Current run directory is \"" + scriptRunPath +"\".")
+    except FileNotFoundError:
+        print("Error: Could not find \"" + configFileName + "\". This should be placed at the run directory of this script. Current run directory is \"" + scriptRunPath +"\".")
+
+# This will get called when the file is called via `python fileneme.py`
+if __name__ == '__main__':
+    main()
