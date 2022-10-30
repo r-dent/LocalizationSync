@@ -21,57 +21,57 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import urllib.request
-import json
-import os
-import re
-import xml.etree.ElementTree as xml
-from xml.dom import minidom
+from fileinput import filename
+
+
+try:
+    import urllib.request
+    import json
+    import os
+    from pathlib import Path
+    import shutil
+    import re
+    import xml.etree.ElementTree as xml
+    from xml.dom import minidom
+    from pyexcel_ods import get_data as load_ods
+except ImportError:
+    print("Cannot import all modules. Do you have at least Python 3.8 installed?")
+    exit()
 
 placeholderPattern = re.compile(r'{String([0-9]*)}|{Number([0-9]*)}')
 scriptRunPath = os.getcwd()
 scriptFileName = os.path.basename(__file__)
 configFileName = os.path.splitext(scriptFileName)[0] + ".config.json"
+exportedFilesFolder = scriptRunPath + "/tmp"
 
 l10nCommentIdentifier = "//"
 l10nSectionTitleIdentifier = "// -"
 l10nLineFormat = "\"%s\" = \"%s\";\n"
 
-def parseDocument(spreadsheedId, sheetIndex):
-    sheetUrl = "https://spreadsheets.google.com/feeds/cells/"+ spreadsheedId +"/"+ str(sheetIndex) +"/public/full?alt=json"
+def loadDocument(spreadsheedId):
+    tempPath = Path('tmp')
+    if tempPath.exists() and tempPath.is_dir():
+        shutil.rmtree(tempPath)
+    os.makedirs(tempPath, exist_ok=True)
+    exportUrl = "https://docs.google.com/spreadsheets/d/"+ spreadsheedId +"/export?format=ods&id="+ spreadsheedId
+    localFilename = exportedFilesFolder +"/sheet_"+ spreadsheedId +"_exported.ods"
     
-    print("Loading JSON from %s." % sheetUrl)
+    print("Loading "+ link(exportUrl))
+    print("Creating temp file "+ localFilename)
 
-    with urllib.request.urlopen(sheetUrl) as response:
-        content = response.read()
-        parsed_json = json.loads(content)
+    urllib.request.urlretrieve(exportUrl, localFilename)
+    content = load_ods(localFilename)
 
-        entries = parsed_json['feed']['entry']
-        rows = {}
+    shutil.rmtree(tempPath)
+    return content
 
-        for entry in entries:
-            cellInfo = entry['gs$cell']
-            row = int(cellInfo['row'])
-            rows[row] = {}
-
-        print("Found %i rows." % (len(rows) - 1))
-        # print(json.dumps(rows, indent=4, sort_keys=True))
-
-        for entry in entries:
-            cellInfo = entry['gs$cell']
-            row = int(cellInfo['row'])
-            col = int(cellInfo['col'])
-            cellContent = entry['content']['$t']
-            rows[row][col] = cellContent
-
-        return rows
-
-def writeLocalizations(rows, configuration):
-    languageCount = max(rows[1].keys()) - 1
+def writeLocalizations(document, configuration):
+    rows = document[configuration["sheetName"]]
+    languageCount = len(rows[0]) - 1
     print("Found %i languages." % languageCount)
 
-    for languageColumn in range(2, 2 + languageCount):
-        languageKey = rows[1][languageColumn].replace(" ", "")
+    for languageColumn in range(1, 1 + languageCount):
+        languageKey = rows[0][languageColumn].replace(" ", "")
         
         if configuration["os"] == "iOS":
             buildLocalizationIOS(rows, languageColumn, languageKey, configuration)
@@ -92,25 +92,22 @@ def buildLocalizationIOS(rows, column, languageKey, configuration):
     outputFile = startFile(folderPath, filePath, fileName)
     l10nWriteHeaderComment(fileName, outputFile)
 
-    for row in rows:
+    for index, row in enumerate(rows):
         # Skip first row and rows without first column.
-        if row == 1 or 1 not in rows[row]:
+        if index == 0 or not row or not row[0]:
             continue
+        key = row[0]
 
-        key = rows[row][1]
         # Add section comment.
         if key.startswith(l10nSectionTitleIdentifier):
             l10nWriteSectionComment(key, outputFile)
             continue
 
         # Skip empty translations...
-        if column not in rows[row]:
-            # ...but check if the key is a commetn first.
-            if key.startswith(l10nCommentIdentifier):
-                l10nWriteComment(key, outputFile)
+        if not row[column]:
             continue
 
-        translation = placeholderPattern.sub("%@", rows[row][column])
+        translation = placeholderPattern.sub("%@", row[column])
         line = "\"%s\" = \"%s\";" % (key, translation)
         # Check if the line is commented.
         if key.startswith(l10nCommentIdentifier):
@@ -134,27 +131,28 @@ def buildLocalizationAndroid(rows, column, languageKey, configuration):
 
     strings = []
 
-    for row in rows:
+    for index, row in enumerate(rows):
         # Skip first row and rows without first column.
-        if row == 1 or 1 not in rows[row]:
+        if index == 0 or not row or not row[0]:
             continue
+        key = row[0]
 
-        key = rows[row][1]
         if key.startswith(l10nSectionTitleIdentifier):
             strings.append({key: ""})
             continue
         # Skip comments.
         if key.startswith(l10nCommentIdentifier):
             continue
-        strings.append({key: placeholderPattern.sub("%s", rows[row][column])})
+        strings.append({key: placeholderPattern.sub("%s", row[column])})
 
     outputFile = startFile(folderPath, filePath, fileName)
     outputFile.write(buildResourceXML(strings, "string"))
     outputFile.close()
     print("Generated " + filePath + ".")
 
-def writeColors(rows, configuration):
+def writeColors(document, configuration):
 
+    rows = document[configuration["sheetName"]]
     isAndroid = (configuration["os"] == "Android")
     fileExtension = ".xml" if isAndroid else ".json"
     folderPath = configuration["outputFolder"]
@@ -163,13 +161,12 @@ def writeColors(rows, configuration):
 
     colors = []
 
-    for row in rows:
+    for index, row in enumerate(rows):
         # Skip first row and rows without first column.
-        if row == 1 or 1 not in rows[row]:
+        if index == 0 or not row or not row[0]:
             continue
-
-        key = rows[row][1]
-        hexValue = rows[row][2]
+        key = row[0]
+        hexValue = row[1]
         colors.append({key: hexValue})
 
     outputFile = startFile(folderPath, filePath, fileName)
@@ -229,19 +226,32 @@ def xmlWriteSectionComment(sectionTitle):
 
     return "Section: %s" % sectionTitle.replace(l10nSectionTitleIdentifier, "").replace(" ", "")
 
+def link(uri, label=None):
+    if label is None: 
+        label = uri
+    parameters = ''
+
+    # OSC 8 ; params ; URI ST <name> OSC 8 ;; ST 
+    escape_mask = '\033]8;{};{}\033\\{}\033]8;;\033\\'
+
+    return escape_mask.format(parameters, uri, label)
+
 # Run.
 
 def run(config):
 
     sheetId = config["sheetId"]
+    try:
+        document = loadDocument(sheetId)
 
-    for l10nConfig in config["l10n"]:
-        tableData = parseDocument(sheetId, l10nConfig["sheetNumber"])
-        writeLocalizations(tableData, l10nConfig)
+        for l10nConfig in config["l10n"]:
+            writeLocalizations(document, l10nConfig)
 
-    for colorConfig in config["colors"]:
-        tableData = parseDocument(sheetId, colorConfig["sheetNumber"])
-        writeColors(tableData, colorConfig)
+        for colorConfig in config["colors"]:
+            writeColors(document, colorConfig)
+
+    except Exception as exc:
+        print("Cannot process sheet - Error: "+ exc)
 
 def main():
     # Parse config file and run tasks.

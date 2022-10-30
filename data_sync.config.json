@@ -3,14 +3,14 @@
   "l10n": [
     {
       "os": "iOS",
-      "sheetNumber": 1,
+      "sheetName": "Localization",
       "baseLanguage": "en",
       "outputFolder": "Output/iOS",
       "fileName": "Localizable"
     },
     {
       "os": "Android",
-      "sheetNumber": 1,
+      "sheetName": "Localization",
       "baseLanguage": "en",
       "outputFolder": "Output/Android/app/src/main/res",
       "fileName": "strings"
@@ -19,13 +19,13 @@
   "colors": [
     {
       "os": "iOS",
-      "sheetNumber": 2,
+      "sheetName": "Colors",
       "outputFolder": "Output/iOS/Generated",
       "fileName": "colors"
     },
     {
       "os": "Android",
-      "sheetNumber": 2,
+      "sheetName": "Colors",
       "outputFolder": "Output/Android/app/src/main/res",
       "fileName": "colors"
     }
