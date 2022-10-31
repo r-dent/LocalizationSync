@@ -93,7 +93,8 @@ def writeLocalizations(document, configuration):
 def buildLocalizationIOS(rows, column, languageKey, configuration):
 
     # Prepare paths.
-    baseLanguage = "en" if (configuration["baseLanguage"] is None) else configuration["baseLanguage"]
+    baseLanguage = "en" if ("baseLanguage" not in configuration) else configuration["baseLanguage"]
+    keyPrefix = "" if ("keyPrefix" not in configuration) else configuration["keyPrefix"]
     languageFolderName = "Base" if (languageKey == baseLanguage) else languageKey
     folderPath = configuration["outputFolder"] + "/" + languageFolderName + ".lproj"
     fileName = configuration["fileName"] + ".strings"
@@ -119,7 +120,7 @@ def buildLocalizationIOS(rows, column, languageKey, configuration):
             continue
 
         translation = placeholderPattern.sub("%@", row[column])
-        line = "\"%s\" = \"%s\";" % (key, translation)
+        line = "\"%s\" = \"%s\";" % (keyPrefix + key, translation)
         # Check if the line is commented.
         if key.startswith(l10nCommentIdentifier):
             l10nWriteComment(line, outputFile)
@@ -135,6 +136,7 @@ def buildLocalizationAndroid(rows, column, languageKey, configuration):
 
     # Prepare paths.
     isBaseLanguage = (configuration["baseLanguage"] == languageKey)
+    keyPrefix = "" if ("keyPrefix" not in configuration) else configuration["keyPrefix"]
     languageFolderName = "values" if isBaseLanguage else "values-" + languageKey
     folderPath = configuration["outputFolder"] + "/" + languageFolderName
     fileName = configuration["fileName"] + ".xml"
@@ -154,7 +156,7 @@ def buildLocalizationAndroid(rows, column, languageKey, configuration):
         # Skip comments.
         if key.startswith(l10nCommentIdentifier):
             continue
-        strings.append({key: placeholderPattern.sub("%s", row[column])})
+        strings.append({keyPrefix + key: placeholderPattern.sub("%s", row[column])})
 
     outputFile = startFile(folderPath, filePath, fileName)
     outputFile.write(buildResourceXML(strings, "string"))
