@@ -10,7 +10,7 @@ setuptools.setup(
             'l10n_sync = Sources.data_sync:main',
         ],
     },
-    version="0.1.0",
+    version="0.2.0",
     author="Roman Gille",
     author_email="developer@romangille.com",
     description="A python script that generates localization files for iOS and Android projects from a public GoogleSheet.",
@@ -18,6 +18,9 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/r-dent/LocalizationSync",
     packages=setuptools.find_packages(),
+    install_requires=[
+        'pyexcel-ods',
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

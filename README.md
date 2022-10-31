@@ -5,7 +5,11 @@ This is a python script that downloads localization strings and CI color informa
 
 ## Installation
 
+This uses the [pip](https://packaging.python.org/en/latest/key_projects/#pip) package manager for Python packages ([see guide](https://packaging.python.org/en/latest/tutorials/installing-packages/)). It depends on the [pyexcel-ods](https://pypi.org/project/pyexcel-ods/) package whick will be installed alongsite automatically when you run:
+
     pip install localization-sync
+
+Hint: It could be that you need to use `pip3` commant instead uf `pip`.
 
 ## Prerequisites
 

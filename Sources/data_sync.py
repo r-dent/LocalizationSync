@@ -21,21 +21,32 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from fileinput import filename
 
+import json
+import os
+import re
+import xml.etree.ElementTree as xml
+from xml.dom import minidom
+
+def link(uri, label=None):
+    if label is None: 
+        label = uri
+    parameters = ''
+    escape_mask = '\033]8;{};{}\033\\{}\033]8;;\033\\'
+    return escape_mask.format(parameters, uri, label)
 
 try:
-    import urllib.request
-    import json
-    import os
     from pathlib import Path
     import shutil
-    import re
-    import xml.etree.ElementTree as xml
-    from xml.dom import minidom
+    import urllib.request
+except ImportError:
+    print("Cannot import all modules. Are you running at least Python 3.6?")
+    exit()
+
+try:
     from pyexcel_ods import get_data as load_ods
 except ImportError:
-    print("Cannot import all modules. Do you have at least Python 3.8 installed?")
+    print("Could not import "+ link("https://pypi.org/project/pyexcel-ods/", "pyexcel-ods") +".\nPlease run: pip install pyexcel-ods")
     exit()
 
 placeholderPattern = re.compile(r'{String([0-9]*)}|{Number([0-9]*)}')
@@ -225,16 +236,6 @@ def l10nWriteSectionComment(sectionTitle, fileHandler):
 def xmlWriteSectionComment(sectionTitle):
 
     return "Section: %s" % sectionTitle.replace(l10nSectionTitleIdentifier, "").replace(" ", "")
-
-def link(uri, label=None):
-    if label is None: 
-        label = uri
-    parameters = ''
-
-    # OSC 8 ; params ; URI ST <name> OSC 8 ;; ST 
-    escape_mask = '\033]8;{};{}\033\\{}\033]8;;\033\\'
-
-    return escape_mask.format(parameters, uri, label)
 
 # Run.
 
