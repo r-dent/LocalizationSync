@@ -5,20 +5,30 @@ This is a python script that downloads localization strings and CI color informa
 
 ## Installation
 
-This uses the [pip](https://packaging.python.org/en/latest/key_projects/#pip) package manager for Python packages ([see guide](https://packaging.python.org/en/latest/tutorials/installing-packages/)). It depends on the [pyexcel-ods](https://pypi.org/project/pyexcel-ods/) package whick will be installed alongsite automatically when you run:
+This uses the [pip](https://packaging.python.org/en/latest/key_projects/#pip) package manager for Python packages ([see guide](https://packaging.python.org/en/latest/tutorials/installing-packages/)). It depends on the [pyexcel-ods](https://pypi.org/project/pyexcel-ods/) package which will be installed alongsite automatically when you run:
 
     pip install localization-sync
 
-Hint: It could be that you need to use `pip3` commant instead uf `pip`.
+Hint: It could be that you need to use `pip3` command instead of `pip`.
 
 ## Prerequisites
+
+### 1. Create a Google Sheet
 
 Create a Google Sheet document with sheets like [these](https://docs.google.com/spreadsheets/d/1672QPWDsxBtaX5hc5QgZhqBwLADMnPVEv7-wLB3g-ug):
 
 ![Example of a L10n table](Resources/sheet_l10n.png)
 ![Example of a colors table](Resources/sheet_colors.png)
 
-Publish the sheeet to the web by pressing __File -> Publish to the web__. Select __Whole Document__ and __Website__. This gives the script access to the public JSON API of Google Docs.
+Mind to __not__ add extra columns or rows at the top/left of your tables. I you need to do so, use `keyRow`/`keyColumn` parameters in config to inset the parsing of the table.
+
+### 2. Publish
+
+Publish the sheeet to the web by pressing __File -> Publish to the web__. Select __Whole Document__ and __Website__. This enables the script do export the contents of the sheet as ODS file.
+
+_Note_: We are using the export instead of the JSON API. Because this way there is no need for creating an API Key and using OAuth on the client (your) side.
+
+### 3. Get the ID
 
 Find the ID of your document by copying it from your browsers address bar.
 

@@ -22,6 +22,8 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+from array import array
+import enum
 import json
 import os
 import re
@@ -48,6 +50,18 @@ try:
 except ImportError:
     print("Could not import "+ link("https://pypi.org/project/pyexcel-ods/", "pyexcel-ods") +".\nPlease run: pip install pyexcel-ods")
     exit()
+
+CONF_L10N = "l10n"
+CONF_COLORS = "colors"
+CONF_SHEET_ID = "sheetId"
+CONF_OS = "os"
+CONF_SHEET_NAME = "sheetName"
+CONF_BASE_LANG = "baseLanguage"
+CONF_OUT_FOLDER = "outputFolder"
+CONF_FILE_NAME = "fileName"
+CONF_KEY_PREFIX = "keyPrefix"
+CONF_KEY_ROW = "keyRow"
+CONF_KEY_COL = "keyColumn"
 
 placeholderPattern = re.compile(r'{String([0-9]*)}|{Number([0-9]*)}')
 scriptRunPath = os.getcwd()
@@ -76,13 +90,41 @@ def loadDocument(spreadsheedId):
     shutil.rmtree(tempPath)
     return content
 
-def writeLocalizations(document, configuration):
-    rows = document[configuration["sheetName"]]
+# TRims stuff
+def trim(rows: list, firstRow: int, firstColumn: int) -> list:
+    trimmedRows = []
+    for rowIndex, row in enumerate(rows):
+        if rowIndex < firstRow:
+            continue
+        trimmedRow = []
+        for colIndex, col in enumerate(row):
+            if colIndex < firstColumn:
+                continue
+            trimmedRow.append(col)
+        trimmedRows.append(trimmedRow)
+    return trimmedRows
+
+def writeLocalizations(document: dict, configuration: dict):
+    # Set default values.
+    if (CONF_BASE_LANG not in configuration): configuration[CONF_BASE_LANG] = "en"
+    if (CONF_KEY_PREFIX not in configuration): configuration[CONF_KEY_PREFIX] = ""
+    keyRow: int = 0 if (CONF_KEY_ROW not in configuration) else int(configuration[CONF_KEY_ROW])
+    keyColumn: int = 0 if (CONF_KEY_COL not in configuration) else int(configuration[CONF_KEY_COL])
+
+    rows = trim(
+        rows=document[configuration[CONF_SHEET_NAME]], 
+        firstRow=keyRow, 
+        firstColumn=keyColumn
+    )
     languageCount = len(rows[0]) - 1
     print("Found %i languages." % languageCount)
 
     for languageColumn in range(1, 1 + languageCount):
-        languageKey = rows[0][languageColumn].replace(" ", "")
+        languageKey = rows[0][languageColumn].strip().lower()
+        if " " in languageKey:
+            print("\""+ languageKey +"\" is not a valid language key. Skipped processing. Please check your config!")
+            continue
+        print("Processing \""+ languageKey +"\" at column "+ str(languageColumn + keyColumn) +".")
         
         if configuration["os"] == "iOS":
             buildLocalizationIOS(rows, languageColumn, languageKey, configuration)
@@ -93,11 +135,9 @@ def writeLocalizations(document, configuration):
 def buildLocalizationIOS(rows, column, languageKey, configuration):
 
     # Prepare paths.
-    baseLanguage = "en" if ("baseLanguage" not in configuration) else configuration["baseLanguage"]
-    keyPrefix = "" if ("keyPrefix" not in configuration) else configuration["keyPrefix"]
-    languageFolderName = "Base" if (languageKey == baseLanguage) else languageKey
-    folderPath = configuration["outputFolder"] + "/" + languageFolderName + ".lproj"
-    fileName = configuration["fileName"] + ".strings"
+    languageFolderName = "Base" if (languageKey == configuration[CONF_BASE_LANG]) else languageKey
+    folderPath = configuration[CONF_OUT_FOLDER] + "/" + languageFolderName + ".lproj"
+    fileName = configuration[CONF_FILE_NAME] + ".strings"
     filePath = folderPath + "/" + fileName
 
     # Prepare file.
@@ -116,11 +156,11 @@ def buildLocalizationIOS(rows, column, languageKey, configuration):
             continue
 
         # Skip empty translations...
-        if not row[column]:
+        if not (column < len(row)) or (not row[column]):
             continue
 
         translation = placeholderPattern.sub("%@", row[column])
-        line = "\"%s\" = \"%s\";" % (keyPrefix + key, translation)
+        line = "\"%s\" = \"%s\";" % (configuration[CONF_KEY_PREFIX] + key, translation)
         # Check if the line is commented.
         if key.startswith(l10nCommentIdentifier):
             l10nWriteComment(line, outputFile)
@@ -135,11 +175,10 @@ def buildLocalizationIOS(rows, column, languageKey, configuration):
 def buildLocalizationAndroid(rows, column, languageKey, configuration):
 
     # Prepare paths.
-    isBaseLanguage = (configuration["baseLanguage"] == languageKey)
-    keyPrefix = "" if ("keyPrefix" not in configuration) else configuration["keyPrefix"]
+    isBaseLanguage = (configuration[CONF_BASE_LANG] == languageKey)
     languageFolderName = "values" if isBaseLanguage else "values-" + languageKey
-    folderPath = configuration["outputFolder"] + "/" + languageFolderName
-    fileName = configuration["fileName"] + ".xml"
+    folderPath = configuration[CONF_OUT_FOLDER] + "/" + languageFolderName
+    fileName = configuration[CONF_FILE_NAME] + ".xml"
     filePath = folderPath + "/" + fileName
 
     strings = []
@@ -153,10 +192,15 @@ def buildLocalizationAndroid(rows, column, languageKey, configuration):
         if key.startswith(l10nSectionTitleIdentifier):
             strings.append({key: ""})
             continue
+
+        # Skip empty translations...
+        if not (column < len(row)) or (not row[column]):
+            continue
+        
         # Skip comments.
         if key.startswith(l10nCommentIdentifier):
             continue
-        strings.append({keyPrefix + key: placeholderPattern.sub("%s", row[column])})
+        strings.append({configuration[CONF_KEY_PREFIX] + key: placeholderPattern.sub("%s", row[column])})
 
     outputFile = startFile(folderPath, filePath, fileName)
     outputFile.write(buildResourceXML(strings, "string"))
@@ -165,11 +209,11 @@ def buildLocalizationAndroid(rows, column, languageKey, configuration):
 
 def writeColors(document, configuration):
 
-    rows = document[configuration["sheetName"]]
+    rows = document[configuration[CONF_SHEET_NAME]]
     isAndroid = (configuration["os"] == "Android")
     fileExtension = ".xml" if isAndroid else ".json"
-    folderPath = configuration["outputFolder"]
-    fileName = configuration["fileName"] + fileExtension
+    folderPath = configuration[CONF_OUT_FOLDER]
+    fileName = configuration[CONF_FILE_NAME] + fileExtension
     filePath = folderPath + "/" + fileName
 
     colors = []
@@ -243,18 +287,21 @@ def xmlWriteSectionComment(sectionTitle):
 
 def run(config):
 
-    sheetId = config["sheetId"]
+    sheetId = config[CONF_SHEET_ID]
     try:
         document = loadDocument(sheetId)
 
-        for l10nConfig in config["l10n"]:
-            writeLocalizations(document, l10nConfig)
+        if CONF_L10N in config:
+            for l10nConfig in config[CONF_L10N]:
+                writeLocalizations(document, l10nConfig)
 
-        for colorConfig in config["colors"]:
-            writeColors(document, colorConfig)
+        if CONF_COLORS in config:
+            for colorConfig in config[CONF_COLORS]:
+                writeColors(document, colorConfig)
 
     except Exception as exc:
-        print("Cannot process sheet - Error: "+ exc)
+        print("Cannot process sheet - Error:")
+        print(exc)
 
 def main():
     # Parse config file and run tasks.
